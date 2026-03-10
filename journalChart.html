@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chart of Accounts</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      margin: 16px;
+      background: #f9fafb;
+      color: #111827;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+    p {
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0 0 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+    }
+    th {
+      background: #f3f4f6;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="chart-title"></h1>
+  <p id="chart-subtitle"></p>
+
+  <table id="chart-table">
+    <thead>
+      <tr>
+        <th style="width:15%;">Code</th>
+        <th style="width:55%;">Account</th>
+        <th style="width:30%;">Type</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="exerciseConfig.js"></script>
+  <script src="journalChartOfAccounts.js"></script>
+  <script>
+    const title =
+      (typeof exerciseConfig !== "undefined" && exerciseConfig.chartWindowTitle) ||
+      "Chart of Accounts";
+    document.getElementById("chart-title").textContent = title;
+    document.getElementById("chart-subtitle").textContent =
+      "Use these 3‑digit codes when entering journal entries.";
+
+    const tbody = document.querySelector("#chart-table tbody");
+    tbody.innerHTML = "";
+    if (Array.isArray(chartOfAccounts)) {
+      chartOfAccounts.forEach(acc => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${acc.code}</td>
+          <td>${acc.name}</td>
+          <td>${acc.type}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
