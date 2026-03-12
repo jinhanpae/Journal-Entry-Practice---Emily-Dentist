@@ -1,5 +1,6 @@
 // journalChartOfAccounts.js
-// Chart of accounts for the current exercise (Emily’s Dental Practice example)
+// Chart of accounts for the current exercise.
+// Pure data, referenced by both the main app and the chart popup.
 
 const chartOfAccounts = [
   // Assets
@@ -12,7 +13,7 @@ const chartOfAccounts = [
   { id: 209, code: "209", name: "Unearned Service Revenue", type: "Liability" },
 
   // Equity
-  { id: 311, code: "311", name: "Share Capital—Ordinary", type: "Equity" },
+  { id: 311, code: "311", name: "Share Capital–Ordinary", type: "Equity" },
   { id: 320, code: "320", name: "Retained Earnings", type: "Equity" },
 
   // Revenue
@@ -24,5 +25,5 @@ const chartOfAccounts = [
   { id: 729, code: "729", name: "Rent Expense", type: "Expense" },
   { id: 732, code: "732", name: "Supplies Expense", type: "Expense" },
   { id: 734, code: "734", name: "Utilities Expense", type: "Expense" },
-  { id: 790, code: "726", name: "Income Tax Expense", type: "Expense" }
+  { id: 790, code: "790", name: "Income Tax Expense", type: "Expense" }
 ];

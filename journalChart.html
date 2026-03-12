@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>Chart of Accounts</title>
+
+  <!-- Simple inline styles are OK here since this is a small popup -->
   <style>
     body {
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -41,41 +43,22 @@
 <body>
   <h1 id="chart-title"></h1>
   <p id="chart-subtitle"></p>
-
   <table id="chart-table">
     <thead>
       <tr>
         <th style="width:15%;">Code</th>
         <th style="width:55%;">Account</th>
-        <th style="width:30%;">Type</th>
+        <th style="width:30%;">Category</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
+  <!-- Shared config and data -->
   <script src="exerciseConfig.js"></script>
   <script src="journalChartOfAccounts.js"></script>
-  <script>
-    const title =
-      (typeof exerciseConfig !== "undefined" && exerciseConfig.chartWindowTitle) ||
-      "Chart of Accounts";
-    document.getElementById("chart-title").textContent = title;
-    document.getElementById("chart-subtitle").textContent =
-      "Use these 3‑digit codes when entering journal entries.";
 
-    const tbody = document.querySelector("#chart-table tbody");
-    tbody.innerHTML = "";
-    if (Array.isArray(chartOfAccounts)) {
-      chartOfAccounts.forEach(acc => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${acc.code}</td>
-          <td>${acc.name}</td>
-          <td>${acc.type}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-  </script>
+  <!-- Popup-specific logic -->
+  <script src="journalChart.js"></script>
 </body>
 </html>

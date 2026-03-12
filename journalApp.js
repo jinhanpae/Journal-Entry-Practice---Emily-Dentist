@@ -1,48 +1,48 @@
 // journalApp.js
-// Generic journal entry practice engine
-// Includes per-question attempt tracking, feedback persistence, trial balance, and full general ledger popups.
+// Generic journal entry practice engine.
+//
+// This file contains:
+// - State (Maps/Sets) shared across questions
+// - Rendering of the journal entry grid
+// - Grading logic, including partial credit
+// - Trial balance and full general ledger popups
+// - Login / startup wiring
+
+// ---------- Global state ----------
 
 let currentIndex = 0;            // index into journalQuestions[]
 let totalAttempted = 0;          // total times "Submit journal entry" clicked (all questions)
 let totalCorrect = 0;            // total points earned (sum of perQuestionScore)
 
-
 // Running totals for a trial balance (by accountId) – built fresh on demand
 // Now stores: { debit, credit, code }
 const tbTotals = new Map();
-
 
 // Store user entries per question so they persist when navigating
 // key: questionId, value: [{ code, debit, credit }, ...]
 const userEntriesByQuestion = new Map();
 
-
 // Track attempts per question ID (how many times "Submit" has been clicked for that question)
 const attemptsByQuestion = new Map();
-
 
 // Questions that have been tried at least once (used as denominator for overall score)
 const triedQuestionIds = new Set();
 
-
 // Per-question score based on latest result (0 or 0.5 or 1)
 const perQuestionScore = new Map();
 
-
 // Questions that have had at least one wrong attempt (used to decide partial vs full credit)
 const everWrongByQuestion = new Map();
-
 
 // Store feedback state per question so it shows on revisit
 // key: questionId, value: { className, text }
 const feedbackByQuestion = new Map();
 
-
-// Store "no entry required" checkbox state per question (debugging/navigation aid)
+// Store "no entry required" checkbox state per question
 const noEntryChosenByQuestion = new Map();
 
 
-// ---------- Simple helper ----------
+// ---------- Simple helpers ----------
 
 function $(id) {
   // Shorthand for document.getElementById
@@ -308,8 +308,8 @@ function resetTrialBalance() {
 
 // ---------- Ledger helpers (per-account detail) ----------
 
-// Build a Map: accountId -> [{ questionId, code, debit, credit }]
 function buildLedgerFromSavedEntries() {
+  // Build a Map: accountId -> [{ questionId, code, debit, credit }]
   const ledgerByAccount = new Map();
 
   userEntriesByQuestion.forEach((savedLines, questionId) => {
@@ -781,7 +781,7 @@ function checkAnswer() {
       fb.textContent =
         "Correct.\n" + (q.explanation || "");
     } else {
-      // Any other combination is considered incorrect (e.g., entered lines, or left everything untouched on later attempts)
+      // Any other combination is considered incorrect
       perQuestionScore.set(q.id, 0);
       everWrongByQuestion.set(q.id, true);
 
@@ -898,7 +898,7 @@ function checkAnswer() {
 }
 
 
-// ---------- Navigation ----------
+// ---------- Navigation / clear ----------
 
 function nextQuestion() {
   // Move to the next question (wrap around) and re-render
@@ -913,9 +913,8 @@ function prevQuestion() {
   renderQuestion();
 }
 
-
-// Clear entry: remove saved transaction and feedback for current question, do NOT restore later
 function clearEntry() {
+  // Clear entry: remove saved transaction and feedback for current question
   const q = journalQuestions[currentIndex];
 
   userEntriesByQuestion.delete(q.id);
@@ -1001,6 +1000,21 @@ function setupLoginAndStartup() {
 }
 
 
+// ---------- Global IP fetch (moved from HTML) ----------
+
+window.USER_IP = "not available";
+fetch("https://api.ipify.org?format=json")
+  .then(r => r.json())
+  .then(d => {
+    if (d && d.ip) {
+      window.USER_IP = d.ip;
+    }
+  })
+  .catch(() => {
+    window.USER_IP = "not available";
+  });
+
+
 // ---------- Init ----------
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -1028,7 +1042,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const resetAllBtn = $("reset-all-btn");
   if (resetAllBtn) {
     resetAllBtn.addEventListener("click", () => {
-      // Full reset of the session (for debugging or a clean restart)
+      // Full reset of the session (clean restart)
       totalAttempted = 0;
       totalCorrect = 0;
       attemptsByQuestion.clear();
@@ -1052,6 +1066,15 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Chart button wiring (popup window for chart of accounts)
+  const chartBtn = $("open-chart-btn");
+  if (chartBtn) {
+    chartBtn.addEventListener("click", () => {
+      window.open("journalChart.html", "COAWindow", "width=500,height=550");
+    });
+  }
+
+  // Footer text from config
   const footer = $("app-footer");
   if (footer) {
     const year = new Date().getFullYear();
@@ -1059,8 +1082,8 @@ window.addEventListener("DOMContentLoaded", () => {
       (exerciseConfig && exerciseConfig.footerText) ||
       "For classroom use only. Do not redistribute.";
     const copyrightText =
-      (exerciseConfig && exerciseConfig.copyright)
-        || `© ${year} Jinhan Pae. All rights reserved.`;
+      (exerciseConfig && exerciseConfig.copyright) ||
+      `© ${year} Jinhan Pae. All rights reserved.`;
     footer.innerHTML =
       `<span>${copyrightText}</span>
        <span>${footerText}</span>`;
