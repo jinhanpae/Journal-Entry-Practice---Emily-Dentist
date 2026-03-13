@@ -12,21 +12,27 @@ The app is available online:
 
 You can:
 
-- Share this link directly with students, or  
-- Embed it in an LMS page (e.g., Canvas) using an `<iframe`.
+- Share this link directly with students, or
+- Embed it in an LMS page (e.g., Canvas) using an `<iframe>`.
 
 ---
 
 ## What students can do
 
-- Read a series of short **transaction descriptions**.  
-- Enter journal entries using **3‑digit account codes**.  
-- Use the **Chart of Accounts** window for reference.  
-- Check their answers and see **feedback** and **scores**.  
-- Open a **Trial Balance** based on all entries they have made.  
+- Read a series of short **transaction descriptions**.
+- Enter journal entries using **3‑digit account codes**.
+- Use the **Chart of Accounts** window for reference.
+- Click **Submit journal entry** to check their work and see **feedback**.
+- See a running **score** with partial credit when they correct earlier mistakes.
+- Open a **Trial Balance** based on all entries they have made.
 - View a **General Ledger** with running balances by account.
 
-Some questions require a journal entry; others test understanding that **no entry is needed**.
+Some questions require a journal entry; others test understanding that **no journal entry is required** for that item.
+
+To prevent common errors:
+
+- The app checks that **debits equal credits** and that **amounts are actually entered**.
+- If debits and credits don’t match, or if accounts are selected with no amounts, students see a warning and the entry is treated as incorrect until fixed.
 
 ---
 
@@ -34,21 +40,24 @@ Some questions require a journal entry; others test understanding that **no entr
 
 The app is designed so you can create new versions by changing only:
 
-- The **exercise configuration** (titles, entity name, login text).  
-- The **chart of accounts**.  
+- The **exercise configuration** (titles, entity name, login text, mode).
+- The **chart of accounts**.
 - The **question set** and model answers.
 
-The core app logic and layout stay the same, which makes it easier to maintain and reuse across semesters.
+The core app logic, scoring, and layout stay the same, which makes it easier to maintain and reuse across semesters.
 
 ---
 
 ## Classroom notes
 
 - The login screen is meant to:
-  - Ask for a **name** (optional) and **password** shared in class.
-  - Give a simple starting point for each session.
-- The app runs entirely in the browser; students do **not** need to install anything.  
-- Pop‑up windows (trial balance, ledger, chart of accounts) may need to be allowed in the browser if they are blocked.
+  - Ask for a **name** (optional) and a **password** shared in class.
+  - Provide a simple starting screen for each session.
+- The app runs entirely in the browser; students do **not** need to install anything.
+- Pop‑up windows (trial balance, general ledger, chart of accounts) may need to be allowed in the browser if they are blocked.
+- Button behavior:
+  - **Submit journal entry** is the main action and is highlighted in blue by default.
+  - After a correct entry, the **Next** button becomes highlighted to guide students forward.
 
 ---
 

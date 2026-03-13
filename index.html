@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <title>Journal Entry Practice</title>
 
-  <!-- All layout/visual styles live in styles.css -->
-  <link rel="stylesheet" href="styles.css" />
+  <!-- All layout/visual styles live in JEStyles.css -->
+  <link rel="stylesheet" href="JEStyles.css" />
 </head>
 <body>
   <!-- Login overlay (name + password) -->
@@ -115,9 +115,9 @@
       <table class="journal-table">
         <thead>
           <tr>
-            <th style="width:14%;">Code</th>
+            <th style="width:15%;">ID</th>
             <th style="width:40%;">Account</th>
-            <th style="width:23%;">Debit</th>
+            <th style="width:22%;">Debit</th>
             <th style="width:23%;">Credit</th>
           </tr>
         </thead>
@@ -137,7 +137,7 @@
         <button id="check-btn" class="primary">Submit journal entry</button>
         <button id="next-btn" class="secondary">Next</button>
         <button id="clear-btn" class="secondary">Clear entry</button>
-        <button id="open-chart-btn" class="secondary">Chart of accounts</button>
+        <button id="open-chart-btn" class="secondary">Open chart of accounts</button>
         <button id="tb-btn" class="secondary">Prepare trial balance</button>
         <button id="ledger-btn" class="secondary">View general ledger</button>
         <button id="reset-all-btn" class="secondary">Start over</button>
@@ -150,11 +150,11 @@
   </div>
 
   <!-- Config and data (pure JS objects) -->
-  <script src="exerciseConfig.js"></script>
-  <script src="journalChartOfAccounts.js"></script>
-  <script src="journalQuestions.js"></script>
+  <script src="JEConfig.js"></script>
+  <script src="JEChartOfAccounts.js"></script>
+  <script src="JEQuestions.js"></script>
 
   <!-- App logic and UI wiring -->
-  <script src="journalApp.js"></script>
+  <script src="JEApp.js"></script>
 </body>
 </html>
