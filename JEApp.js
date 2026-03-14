@@ -1,55 +1,39 @@
 // JEApp.js
-// Generic journal entry practice engine for the JE app.
+// Generic journal entry practice engine for JE apps.
 //
-// Contains:
-// - Shared state (Maps/Sets) across questions
-// - Rendering of the journal entry grid
-// - Grading logic (exercise mode)
-// - Trial balance and full general ledger popups
-// - Login / startup wiring
-// - Test mode: saves entries but skips grading/feedback
+// Assumes these globals exist per exercise:
+// - exerciseConfig (JEConfig.js)
+// - journalQuestions (JEQuestions.js)
+// - chartOfAccounts (JEChartOfAccounts.js)
+//
+// Question flags (defaults if omitted):
+// - requiresEntry: true   (set false for “no entry required” items)
+// - isAdjusting: false    (set true only for adjusting entries)
+// - isClosing: false      (set true only for closing entries)
 
+let currentIndex = 0;
+let totalAttempted = 0;
+let totalCorrect = 0;
 
-
-// ---------- Global state ----------
-
-let currentIndex = 0;            // index into journalQuestions[]
-let totalAttempted = 0;          // total times "Submit journal entry" clicked (all questions)
-let totalCorrect = 0;            // total points earned (sum of perQuestionScore)
-
-// Running totals for a trial balance (by accountId) – built fresh on demand
-// Stores: { debit, credit, code }
 const tbTotals = new Map();
-
-// Store user entries per question so they persist when navigating
-// key: questionId, value: [{ code, debit, credit }, ...]
 const userEntriesByQuestion = new Map();
-
-// Track attempts per question ID (how many times "Submit" has been clicked for that question)
 const attemptsByQuestion = new Map();
-
-// Questions that have been tried at least once (used as denominator for overall score)
 const triedQuestionIds = new Set();
-
-// Per-question score based on latest result (0 or 0.5 or 1)
 const perQuestionScore = new Map();
-
-// Questions that have had at least one wrong attempt (used to decide partial vs full credit)
 const everWrongByQuestion = new Map();
-
-// Store feedback state per question so it shows on revisit
-// key: questionId, value: { className, text }
 const feedbackByQuestion = new Map();
-
-// Store "no entry required" checkbox state per question
 const noEntryChosenByQuestion = new Map();
 
+// Normalize question metadata and build a lookup map
+const qById = new Map();
+journalQuestions.forEach(q => {
+  if (typeof q.requiresEntry === "undefined") q.requiresEntry = true;
+  if (typeof q.isAdjusting === "undefined") q.isAdjusting = false;
+  if (typeof q.isClosing === "undefined") q.isClosing = false;
+  qById.set(q.id, q);
+});
 
-// ---------- Simple helpers ----------
-
-function $(id) {
-  return document.getElementById(id);
-}
+function $(id) { return document.getElementById(id); }
 
 function hashCode(str) {
   let hash = 0;
@@ -66,7 +50,6 @@ function isTestMode() {
   return exerciseConfig && exerciseConfig.mode === "test";
 }
 
-
 // ---------- Chart lookup helpers ----------
 
 function findAccountByCode(code) {
@@ -80,26 +63,21 @@ function nameForAccountId(id) {
   return acc ? acc.name : "(Unknown account)";
 }
 
-
 // ---------- Rendering the question ----------
 
 function renderQuestion() {
   const q = journalQuestions[currentIndex];
-
-  $("tx-title").textContent =
-    q.title + (q.date ? ` (Date: ${q.date})` : "");
+  $("tx-title").textContent = q.title + (q.date ? ` (Date: ${q.date})` : "");
   $("tx-description").textContent = q.description;
 
   const tbody = $("journal-rows");
   tbody.innerHTML = "";
 
   const saved = userEntriesByQuestion.get(q.id);
-
   if (saved && saved.length > 0) {
     saved.forEach(line => {
       const code = line.code || "";
       const tr = document.createElement("tr");
-
       const tdCode = document.createElement("td");
       const tdName = document.createElement("td");
       const tdDr = document.createElement("td");
@@ -119,12 +97,22 @@ function renderQuestion() {
       const drInput = document.createElement("input");
       drInput.type = "number";
       drInput.step = "0.01";
+      drInput.min = "0";
+      drInput.oninput = function () {
+        if (!this.value) return;
+        if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+      };
       drInput.className = "dr-input";
       drInput.value = line.debit ? String(line.debit) : "";
 
       const crInput = document.createElement("input");
       crInput.type = "number";
       crInput.step = "0.01";
+      crInput.min = "0";
+      crInput.oninput = function () {
+        if (!this.value) return;
+        if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+      };
       crInput.className = "cr-input";
       crInput.value = line.credit ? String(line.credit) : "";
 
@@ -132,12 +120,10 @@ function renderQuestion() {
       tdName.appendChild(nameInput);
       tdDr.appendChild(drInput);
       tdCr.appendChild(crInput);
-
       tr.appendChild(tdCode);
       tr.appendChild(tdName);
       tr.appendChild(tdDr);
       tr.appendChild(tdCr);
-
       tbody.appendChild(tr);
 
       updateNameForCodeInput(codeInput, nameInput);
@@ -177,7 +163,6 @@ function renderQuestion() {
 function addRow(initialCode = "") {
   const tbody = $("journal-rows");
   const tr = document.createElement("tr");
-
   const tdCode = document.createElement("td");
   const tdName = document.createElement("td");
   const tdDr = document.createElement("td");
@@ -197,23 +182,31 @@ function addRow(initialCode = "") {
   const drInput = document.createElement("input");
   drInput.type = "number";
   drInput.step = "0.01";
+  drInput.min = "0";
+  drInput.oninput = function () {
+    if (!this.value) return;
+    if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+  };
   drInput.className = "dr-input";
 
   const crInput = document.createElement("input");
   crInput.type = "number";
   crInput.step = "0.01";
+  crInput.min = "0";
+  crInput.oninput = function () {
+    if (!this.value) return;
+    if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+  };
   crInput.className = "cr-input";
 
   tdCode.appendChild(codeInput);
   tdName.appendChild(nameInput);
   tdDr.appendChild(drInput);
   tdCr.appendChild(crInput);
-
   tr.appendChild(tdCode);
   tr.appendChild(tdName);
   tr.appendChild(tdDr);
   tr.appendChild(tdCr);
-
   tbody.appendChild(tr);
 
   updateNameForCodeInput(codeInput, nameInput);
@@ -227,7 +220,6 @@ function updateNameForCodeInput(codeInput, nameInput) {
   nameInput.value = acc ? acc.name : "";
 }
 
-
 // ---------- Collect user input & comparison ----------
 
 function getUserLines() {
@@ -236,34 +228,22 @@ function getUserLines() {
     .map(tr => {
       const code = tr.querySelector(".code-input").value.trim();
       const acc = findAccountByCode(code);
-
       const drVal = tr.querySelector(".dr-input").value;
       const crVal = tr.querySelector(".cr-input").value;
-
       const debit = drVal ? parseFloat(drVal) : 0;
       const credit = crVal ? parseFloat(crVal) : 0;
-
       if (!code && debit === 0 && credit === 0) return null;
-
-      return {
-        accountId: acc ? acc.id : null,
-        code,
-        debit,
-        credit
-      };
+      return { accountId: acc ? acc.id : null, code, debit, credit };
     })
     .filter(x => x !== null);
 }
 
 function journalsEqual(user, correct) {
   if (user.length !== correct.length) return false;
-
   const key = r =>
     `${r.accountId}|${r.debit.toFixed(2)}|${r.credit.toFixed(2)}`;
-
   const u = [...user].sort((a, b) => (key(a) > key(b) ? 1 : -1));
   const c = [...correct].sort((a, b) => (key(a) > key(b) ? 1 : -1));
-
   for (let i = 0; i < c.length; i++) {
     if (
       u[i].accountId !== c[i].accountId ||
@@ -276,54 +256,41 @@ function journalsEqual(user, correct) {
   return true;
 }
 
+// ---------- Trial balance helpers (sign-based, with modes) ----------
 
-// ---------- Trial balance helpers ----------
-
-function buildTrialBalanceFromSavedEntries() {
+function buildTrialBalanceFromSavedEntries(mode = "adjusted") {
   tbTotals.clear();
-
   let begTotal = 0;
 
   chartOfAccounts.forEach(acc => {
     if (typeof acc.beginningBalance === "number" && acc.beginningBalance !== 0) {
       const bal = acc.beginningBalance;
       begTotal += bal;
-
-      const isDebitNormal =
-        acc.type === "Asset" || acc.type === "Expense";
-
-      let debit = 0;
-      let credit = 0;
-
-      if (isDebitNormal) {
-        if (bal > 0) debit = bal;
-        else if (bal < 0) credit = -bal;
-      } else {
-        if (bal < 0) credit = -bal;
-        else if (bal > 0) debit = bal;
-      }
-
-      tbTotals.set(acc.id, {
-        debit,
-        credit,
-        code: acc.code
-      });
+      tbTotals.set(acc.id, { net: bal, code: acc.code });
     }
   });
 
-  userEntriesByQuestion.forEach(savedLines => {
+  userEntriesByQuestion.forEach((savedLines, questionId) => {
+    const q = qById.get(questionId);
+    const isAdj = q && q.isAdjusting === true;
+    const isClose = q && q.isClosing === true;
+
+    let include = true;
+    if (mode === "unadjusted") {
+      include = !isAdj && !isClose;
+    } else if (mode === "adjusted") {
+      include = !isClose;
+    } else if (mode === "postClosing") {
+      include = true; // include all; filter temps later
+    }
+    if (!include) return;
+
     savedLines.forEach(line => {
       const acc = findAccountByCode(line.code);
       if (!acc) return;
-
-      const prev = tbTotals.get(acc.id) ||
-        { debit: 0, credit: 0, code: acc.code };
-
-      tbTotals.set(acc.id, {
-        debit: prev.debit + (line.debit || 0),
-        credit: prev.credit + (line.credit || 0),
-        code: acc.code
-      });
+      const prev = tbTotals.get(acc.id) || { net: 0, code: acc.code };
+      const netChange = (line.debit || 0) - (line.credit || 0);
+      tbTotals.set(acc.id, { net: prev.net + netChange, code: acc.code });
     });
   });
 
@@ -334,7 +301,6 @@ function resetTrialBalance() {
   tbTotals.clear();
 }
 
-
 // ---------- Ledger helpers ----------
 
 function buildLedgerFromSavedEntries() {
@@ -342,9 +308,7 @@ function buildLedgerFromSavedEntries() {
 
   chartOfAccounts.forEach(acc => {
     if (typeof acc.beginningBalance === "number" && acc.beginningBalance !== 0) {
-      if (!ledgerByAccount.has(acc.id)) {
-        ledgerByAccount.set(acc.id, []);
-      }
+      if (!ledgerByAccount.has(acc.id)) ledgerByAccount.set(acc.id, []);
     }
   });
 
@@ -352,7 +316,6 @@ function buildLedgerFromSavedEntries() {
     savedLines.forEach(line => {
       const acc = findAccountByCode(line.code);
       if (!acc) return;
-
       const list = ledgerByAccount.get(acc.id) || [];
       list.push({
         questionId,
@@ -369,7 +332,6 @@ function buildLedgerFromSavedEntries() {
 
 function openFullLedgerWindow() {
   const ledgerByAccount = buildLedgerFromSavedEntries();
-
   if (ledgerByAccount.size === 0) {
     alert("No valid journal entries or beginning balances have been recorded for this session yet.");
     return;
@@ -377,7 +339,6 @@ function openFullLedgerWindow() {
 
   const titleById = new Map();
   const dateById = new Map();
-
   journalQuestions.forEach(q => {
     if (q && q.id != null) {
       if (q.title) titleById.set(q.id, q.title);
@@ -386,36 +347,28 @@ function openFullLedgerWindow() {
   });
 
   const entityName =
-    (typeof exerciseConfig !== "undefined" && exerciseConfig.tbEntityName) ||
+    (typeof exerciseConfig !== "undefined" && exerciseConfig.entityName) ||
     "Entity";
 
   const sections = [];
-
   const accountIds = Array.from(ledgerByAccount.keys()).sort((a, b) => a - b);
 
   accountIds.forEach(accountId => {
     const lines = ledgerByAccount.get(accountId) || [];
     const accountName = nameForAccountId(accountId) || "(Unknown account)";
-
     const accMeta = chartOfAccounts.find(a => a.id === accountId);
     const begBal =
       accMeta && typeof accMeta.beginningBalance === "number"
         ? accMeta.beginningBalance
         : 0;
-
-    let runningBalance = 0;
-    if (begBal !== 0) {
-      runningBalance = begBal;
-    }
+    let runningBalance = begBal !== 0 ? begBal : 0;
 
     const rowPieces = [];
-
     if (begBal !== 0) {
       const displayBegBal =
         runningBalance > 0
           ? runningBalance.toLocaleString()
           : "(" + Math.abs(runningBalance).toLocaleString() + ")";
-
       rowPieces.push(`
         <tr>
           <td>Beginning balance</td>
@@ -426,27 +379,21 @@ function openFullLedgerWindow() {
       `);
     }
 
-    lines.sort((a, b) => {
-      if (a.questionId < b.questionId) return -1;
-      if (a.questionId > b.questionId) return 1;
-      return 0;
-    });
+    lines.sort((a, b) => a.questionId - b.questionId);
 
-    const transactionRows = lines.map(line => {
-      runningBalance += (line.debit || 0) - (line.credit || 0);
-
-      const baseLabel = titleById.get(line.questionId) || line.questionId || "";
-      const qDate = dateById.get(line.questionId);
-      const label = qDate ? `${qDate} – ${baseLabel}` : baseLabel;
-
-      let balanceDisplay = "";
-      if (runningBalance > 0) {
-        balanceDisplay = runningBalance.toLocaleString();
-      } else if (runningBalance < 0) {
-        balanceDisplay = "(" + Math.abs(runningBalance).toLocaleString() + ")";
-      }
-
-      return `
+    const transactionRows = lines
+      .map(line => {
+        runningBalance += (line.debit || 0) - (line.credit || 0);
+        const baseLabel = titleById.get(line.questionId) || line.questionId || "";
+        const qDate = dateById.get(line.questionId);
+        const label = qDate ? `${qDate} – ${baseLabel}` : baseLabel;
+        let balanceDisplay = "";
+        if (runningBalance > 0) {
+          balanceDisplay = runningBalance.toLocaleString();
+        } else if (runningBalance < 0) {
+          balanceDisplay = "(" + Math.abs(runningBalance).toLocaleString() + ")";
+        }
+        return `
         <tr>
           <td>${label}</td>
           <td style="text-align:right;">${line.debit ? line.debit.toLocaleString() : ""}</td>
@@ -454,10 +401,10 @@ function openFullLedgerWindow() {
           <td style="text-align:right;">${balanceDisplay}</td>
         </tr>
       `;
-    }).join("");
+      })
+      .join("");
 
     const rowsHtml = rowPieces.join("") + transactionRows;
-
     const tableHtml = `
       <section style="margin-bottom: 24px;">
         <h2 style="font-size: 15px; margin: 16px 0 6px;">${accountName} (${accountId})</h2>
@@ -476,7 +423,6 @@ function openFullLedgerWindow() {
         </table>
       </section>
     `;
-
     sections.push(tableHtml);
   });
 
@@ -497,13 +443,8 @@ function openFullLedgerWindow() {
       color: #111827;
       font-size: 13px;
     }
-    h1 {
-      font-size: 18px;
-      margin: 0 0 8px;
-    }
-    h2 {
-      font-size: 15px;
-    }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    h2 { font-size: 15px; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -517,10 +458,7 @@ function openFullLedgerWindow() {
       padding: 4px 6px;
       font-size: 12px;
     }
-    th {
-      background: #f3f4f6;
-      text-align: left;
-    }
+    th { background: #f3f4f6; text-align: left; }
   </style>
 </head>
 <body>
@@ -531,11 +469,10 @@ function openFullLedgerWindow() {
   win.document.close();
 }
 
+// ---------- Trial balance window (supports modes) ----------
 
-// ---------- Trial balance window ----------
-
-function openTrialBalanceWindow() {
-  buildTrialBalanceFromSavedEntries();
+function openTrialBalanceWindow(mode = "adjusted") {
+  buildTrialBalanceFromSavedEntries(mode);
 
   if (tbTotals.size === 0) {
     alert("No valid journal entries have been recorded for this session yet.");
@@ -544,12 +481,24 @@ function openTrialBalanceWindow() {
 
   const rows = [];
   tbTotals.forEach((totals, accountId) => {
+    const name = nameForAccountId(accountId);
+    const accMeta = chartOfAccounts.find(a => a.id === accountId);
+    const accType = accMeta ? accMeta.type : "";
+
+    if (mode === "postClosing") {
+      const isPermanent =
+        accType === "Asset" ||
+        accType === "Liability" ||
+        accType === "Equity";
+      if (!isPermanent) return;
+    }
+
     rows.push({
       accountId,
-      name: nameForAccountId(accountId),
-      debit: totals.debit,
-      credit: totals.credit,
-      code: totals.code || ""
+      name,
+      net: totals.net || 0,
+      code: totals.code || "",
+      type: accType
     });
   });
 
@@ -558,11 +507,26 @@ function openTrialBalanceWindow() {
   let totalDr = 0;
   let totalCr = 0;
 
-  rows.forEach(r => {
-    const net = r.debit - r.credit;
-    if (net > 0) totalDr += net;
-    else if (net < 0) totalCr += -net;
-  });
+  const tbRowsHtml = rows
+    .map(r => {
+      const net = r.net || 0;
+      let debitBalance = "";
+      let creditBalance = "";
+      if (net > 0) {
+        debitBalance = net.toLocaleString();
+        totalDr += net;
+      } else if (net < 0) {
+        creditBalance = (-net).toLocaleString();
+        totalCr += -net;
+      }
+      return `<tr>
+        <td>${r.code}</td>
+        <td>${r.name}</td>
+        <td class='num'>${debitBalance}</td>
+        <td class='num'>${creditBalance}</td>
+      </tr>`;
+    })
+    .join("");
 
   const name = sessionStorage.getItem("studentName") || "(not provided)";
   const now = new Date();
@@ -571,39 +535,19 @@ function openTrialBalanceWindow() {
   const ip = window.USER_IP || "not available";
   const questionsTried = triedQuestionIds.size;
   const scoreStr = `${totalCorrect}/${questionsTried || 0}`;
-
   const preparedPrefix =
     `User: ${name} (score: ${scoreStr}, ${dateStr} ${timeStr}, IP: ${ip}, hash: `;
-
   const hash = hashCode(preparedPrefix);
 
   const entityName =
     (typeof exerciseConfig !== "undefined" && exerciseConfig.tbEntityName) ||
     "Trial Balance";
-
   const tbWindowTitle =
     (typeof exerciseConfig !== "undefined" && exerciseConfig.tbWindowTitle) ||
     entityName;
 
   const win = window.open("", "JournalTB", "width=550,height=650");
   if (!win) return;
-
-  const tbRowsHtml = rows
-    .map(r => {
-      const net = r.debit - r.credit;
-      let debitBalance = 0;
-      let creditBalance = 0;
-      if (net > 0) debitBalance = net;
-      else if (net < 0) creditBalance = -net;
-
-      return `<tr>
-        <td>${r.code}</td>
-        <td>${r.name}</td>
-        <td class='num'>${debitBalance ? debitBalance.toLocaleString() : ""}</td>
-        <td class='num'>${creditBalance ? creditBalance.toLocaleString() : ""}</td>
-      </tr>`;
-    })
-    .join("");
 
   win.document.open();
   win.document.write(`<!DOCTYPE html>
@@ -619,10 +563,7 @@ function openTrialBalanceWindow() {
       color: #111827;
       font-size: 13px;
     }
-    h1 {
-      font-size: 18px;
-      margin: 0 0 8px;
-    }
+    h1 { font-size: 18px; margin: 0 0 8px; }
     p {
       font-size: 12px;
       color: #6b7280;
@@ -640,17 +581,9 @@ function openTrialBalanceWindow() {
       border: 1px solid #e5e7eb;
       padding: 4px 6px;
     }
-    th {
-      background: #f3f4f6;
-      text-align: left;
-    }
-    th.num,
-    td.num {
-      text-align: right;
-    }
-    tfoot th {
-      text-align: left;
-    }
+    th { background: #f3f4f6; text-align: left; }
+    th.num, td.num { text-align: right; }
+    tfoot th { text-align: left; }
     .meta {
       margin-top: 10px;
       font-size: 11px;
@@ -702,13 +635,11 @@ ${preparedPrefix}${hash})
   win.document.close();
 }
 
-
 // ---------- Visual realignment of user rows ----------
 
 function rearrangeVisibleRows() {
   const tbody = $("journal-rows");
   const rows = Array.from(tbody.querySelectorAll("tr"));
-
   const debits = [];
   const credits = [];
   const blanks = [];
@@ -717,11 +648,9 @@ function rearrangeVisibleRows() {
     const drInput = tr.querySelector(".dr-input");
     const crInput = tr.querySelector(".cr-input");
     const codeInput = tr.querySelector(".code-input");
-
     const drVal = drInput.value;
     const crVal = crInput.value;
     const code = codeInput.value.trim();
-
     const debit = drVal ? parseFloat(drVal) : 0;
     const credit = crVal ? parseFloat(crVal) : 0;
 
@@ -747,18 +676,15 @@ function rearrangeVisibleRows() {
     setIndent(tr, "0px");
     tbody.appendChild(tr);
   });
-
   credits.forEach(tr => {
     setIndent(tr, "16px");
     tbody.appendChild(tr);
   });
-
   blanks.forEach(tr => {
     setIndent(tr, "0px");
     tbody.appendChild(tr);
   });
 }
-
 
 // ---------- Grading ----------
 
@@ -770,34 +696,36 @@ function checkAnswer() {
 
   const noEntryBox = $("no-entry-checkbox");
   const noEntryChosen = !!(noEntryBox && noEntryBox.checked);
-
   const hasAnyLines = user.length > 0;
-
   const prevAttempts = attemptsByQuestion.get(q.id) || 0;
 
   noEntryChosenByQuestion.set(q.id, noEntryChosen);
 
   const nextBtn = $("next-btn");
   const submitBtn = $("check-btn");
-
   if (nextBtn) nextBtn.classList.remove("next-highlight");
   if (submitBtn) submitBtn.classList.remove("next-inactive");
 
   if (prevAttempts === 0) {
     const isRealAttempt = hasAnyLines || noEntryChosen;
-
     if (!isRealAttempt) {
       fb.className = "feedback incorrect";
       fb.textContent =
         needsEntry
           ? "Enter at least one account code with a debit or credit amount, or choose \"No journal entry is required\" before submitting."
           : "Choose \"No journal entry is required\" or enter a journal entry before submitting.";
-      feedbackByQuestion.set(q.id, {
-        className: fb.className,
-        text: fb.textContent
-      });
+      feedbackByQuestion.set(q.id, { className: fb.className, text: fb.textContent });
       return;
     }
+  }
+
+  const hasNegative = user.some(r => r.debit < 0 || r.credit < 0);
+  if (hasNegative) {
+    fb.className = "feedback incorrect";
+    fb.textContent =
+      "Debit and credit amounts must be zero or positive. Negative amounts are not allowed in this exercise.";
+    feedbackByQuestion.set(q.id, { className: fb.className, text: fb.textContent });
+    return;
   }
 
   rearrangeVisibleRows();
@@ -805,11 +733,7 @@ function checkAnswer() {
   if (isTestMode()) {
     userEntriesByQuestion.set(
       q.id,
-      user.map(line => ({
-        code: line.code,
-        debit: line.debit,
-        credit: line.credit
-      }))
+      user.map(line => ({ code: line.code, debit: line.debit, credit: line.credit }))
     );
 
     const totalDr = user.reduce((s, r) => s + r.debit, 0);
@@ -820,7 +744,6 @@ function checkAnswer() {
       fb.textContent =
         "Debits and credits are not equal.\n" +
         `Total debits: ${totalDr.toFixed(2)}, total credits: ${totalCr.toFixed(2)}.`;
-
       const scoreEl = $("score-summary");
       if (scoreEl) scoreEl.textContent = "";
       return;
@@ -834,7 +757,6 @@ function checkAnswer() {
 
     const scoreEl = $("score-summary");
     if (scoreEl) scoreEl.textContent = "";
-
     return;
   }
 
@@ -842,10 +764,7 @@ function checkAnswer() {
     fb.className = "feedback incorrect";
     fb.textContent =
       "You cannot check \"No journal entry is required\" and also enter journal lines. Choose one approach and try again.";
-    feedbackByQuestion.set(q.id, {
-      className: fb.className,
-      text: fb.textContent
-    });
+    feedbackByQuestion.set(q.id, { className: fb.className, text: fb.textContent });
     return;
   }
 
@@ -853,11 +772,7 @@ function checkAnswer() {
 
   userEntriesByQuestion.set(
     q.id,
-    user.map(line => ({
-      code: line.code,
-      debit: line.debit,
-      credit: line.credit
-    }))
+    user.map(line => ({ code: line.code, debit: line.debit, credit: line.credit }))
   );
 
   const totalDr = user.reduce((s, r) => s + r.debit, 0);
@@ -868,8 +783,7 @@ function checkAnswer() {
   totalAttempted++;
 
   const hasAllZeroAmounts =
-    hasAnyLines &&
-    user.every(r => r.debit === 0 && r.credit === 0);
+    hasAnyLines && user.every(r => r.debit === 0 && r.credit === 0);
 
   if (!needsEntry) {
     if (noEntryChosen && !hasAnyLines) {
@@ -886,40 +800,32 @@ function checkAnswer() {
     } else {
       perQuestionScore.set(q.id, 0);
       everWrongByQuestion.set(q.id, true);
-
       fb.className = "feedback incorrect";
       fb.textContent =
         "Review the concept carefully and try again.";
     }
 
-    feedbackByQuestion.set(q.id, {
-      className: fb.className,
-      text: fb.textContent
-    });
+    feedbackByQuestion.set(q.id, { className: fb.className, text: fb.textContent });
 
     totalCorrect = 0;
-    perQuestionScore.forEach(v => {
-      totalCorrect += v || 0;
-    });
+    perQuestionScore.forEach(v => { totalCorrect += v || 0; });
 
-    const questionsTried = triedQuestionIds.size;
+    const questionsTried2 = triedQuestionIds.size;
     const pctNon =
-      questionsTried > 0
-        ? ((totalCorrect / questionsTried) * 100).toFixed(1)
+      questionsTried2 > 0
+        ? ((totalCorrect / questionsTried2) * 100).toFixed(1)
         : "0.0";
 
     $("score-summary").textContent =
-      `Score: ${totalCorrect.toFixed(1)} / ${questionsTried} questions ` +
+      `Score: ${totalCorrect.toFixed(1)} / ${questionsTried2} questions ` +
       `(${pctNon}% correct, with partial credit). ` +
-      `Questions attempted: ${questionsTried}.`;
-
+      `Questions attempted: ${questionsTried2}.`;
     return;
   }
 
   if (hasAllZeroAmounts) {
     perQuestionScore.set(q.id, 0);
     everWrongByQuestion.set(q.id, true);
-
     fb.className = "feedback incorrect";
     fb.textContent =
       "No debit or credit amounts were entered.\n" +
@@ -929,7 +835,6 @@ function checkAnswer() {
     if (noEntryChosen) {
       perQuestionScore.set(q.id, 0);
       everWrongByQuestion.set(q.id, true);
-
       fb.textContent =
         "A journal entry is required; enter the appropriate accounts and amounts.";
     } else {
@@ -943,44 +848,32 @@ function checkAnswer() {
   } else if (Math.abs(totalDr - totalCr) > 0.01) {
     perQuestionScore.set(q.id, 0);
     everWrongByQuestion.set(q.id, true);
-
     fb.className = "feedback incorrect";
     fb.textContent =
       "Debits and credits are not equal.\n" +
-      `Total debits: ${totalDr.toFixed(2)}, total credits: ${totalCr.toFixed(
-        2
-      )}.`;
+      `Total debits: ${totalDr.toFixed(2)}, total credits: ${totalCr.toFixed(2)}.`;
   } else {
     const isNowCorrect = journalsEqual(user, q.correctLines);
-
     if (isNowCorrect) {
       const hadWrong = everWrongByQuestion.get(q.id) === true;
       const newScore = hadWrong ? 0.5 : 1.0;
       perQuestionScore.set(q.id, newScore);
-
       fb.className = "feedback correct";
       fb.textContent = "Correct!";
-
       if (nextBtn) nextBtn.classList.add("next-highlight");
       if (submitBtn) submitBtn.classList.add("next-inactive");
     } else {
       perQuestionScore.set(q.id, 0);
       everWrongByQuestion.set(q.id, true);
-
       fb.className = "feedback incorrect";
       fb.textContent = "Not correct.\n" + q.explanation;
     }
   }
 
-  feedbackByQuestion.set(q.id, {
-    className: fb.className,
-    text: fb.textContent
-  });
+  feedbackByQuestion.set(q.id, { className: fb.className, text: fb.textContent });
 
   totalCorrect = 0;
-  perQuestionScore.forEach(v => {
-    totalCorrect += v || 0;
-  });
+  perQuestionScore.forEach(v => { totalCorrect += v || 0; });
 
   const questionsTried = triedQuestionIds.size;
   const pct =
@@ -994,7 +887,6 @@ function checkAnswer() {
     `Questions attempted: ${questionsTried}.`;
 }
 
-
 // ---------- Navigation / clear ----------
 
 function nextQuestion() {
@@ -1003,19 +895,13 @@ function nextQuestion() {
 }
 
 function prevQuestion() {
-  currentIndex =
-    (currentIndex - 1 + journalQuestions.length) % journalQuestions.length;
+  currentIndex = (currentIndex - 1 + journalQuestions.length) % journalQuestions.length;
   renderQuestion();
 }
 
 function clearEntry() {
   const q = journalQuestions[currentIndex];
-
   userEntriesByQuestion.delete(q.id);
-  perQuestionScore.set(q.id, 0);
-  attemptsByQuestion.delete(q.id);
-  everWrongByQuestion.delete(q.id);
-  feedbackByQuestion.delete(q.id);
   noEntryChosenByQuestion.delete(q.id);
 
   const tbody = $("journal-rows");
@@ -1023,8 +909,9 @@ function clearEntry() {
   addRow("");
   addRow("");
 
-  $("feedback").textContent = "";
-  $("feedback").className = "feedback";
+  const fb = $("feedback");
+  fb.textContent = "";
+  fb.className = "feedback";
 
   const noEntryBox = $("no-entry-checkbox");
   if (noEntryBox) noEntryBox.checked = false;
@@ -1034,7 +921,6 @@ function clearEntry() {
   if (nextBtn) nextBtn.classList.remove("next-highlight");
   if (submitBtn) submitBtn.classList.remove("next-inactive");
 }
-
 
 // ---------- Login / startup ----------
 
@@ -1063,7 +949,6 @@ function setupLoginAndStartup() {
   function attemptLogin() {
     const pw = (passInput && passInput.value || "").trim();
     const noPasswordRequired = requiredPassword === "";
-
     if (noPasswordRequired || pw === requiredPassword) {
       const nm = (nameInput && nameInput.value || "").trim();
       if (nm) {
@@ -1096,7 +981,6 @@ function setupLoginAndStartup() {
   }
 }
 
-
 // ---------- Global IP fetch ----------
 
 window.USER_IP = "not available";
@@ -1110,7 +994,6 @@ fetch("https://api.ipify.org?format=json")
   .catch(() => {
     window.USER_IP = "not available";
   });
-
 
 // ---------- Init ----------
 
@@ -1130,8 +1013,21 @@ window.addEventListener("DOMContentLoaded", () => {
   const tbBtn = $("tb-btn");
   if (tbBtn) {
     tbBtn.addEventListener("click", () => {
-      openTrialBalanceWindow();
+      openTrialBalanceWindow("adjusted");
     });
+  }
+
+  const tbUnadjBtn = $("tb-unadjusted-btn");
+  if (tbUnadjBtn) {
+    tbUnadjBtn.addEventListener("click", () => openTrialBalanceWindow("unadjusted"));
+  }
+  const tbAdjBtn = $("tb-adjusted-btn");
+  if (tbAdjBtn) {
+    tbAdjBtn.addEventListener("click", () => openTrialBalanceWindow("adjusted"));
+  }
+  const tbPostBtn = $("tb-postclosing-btn");
+  if (tbPostBtn) {
+    tbPostBtn.addEventListener("click", () => openTrialBalanceWindow("postClosing"));
   }
 
   const ledgerBtn = $("ledger-btn");
@@ -1152,22 +1048,26 @@ window.addEventListener("DOMContentLoaded", () => {
       everWrongByQuestion.clear();
       feedbackByQuestion.clear();
       noEntryChosenByQuestion.clear();
-
       resetTrialBalance();
       userEntriesByQuestion.clear();
-      $("score-summary").textContent = "";
-      $("feedback").textContent = "";
-      $("feedback").className = "feedback";
-      currentIndex = 0;
+
+      const fb = $("feedback");
+      if (fb) {
+        fb.textContent = "";
+        fb.className = "feedback";
+      }
+      const scoreEl = $("score-summary");
+      if (scoreEl) scoreEl.textContent = "";
 
       const noEntryBox = $("no-entry-checkbox");
       if (noEntryBox) noEntryBox.checked = false;
 
-      const nextBtn = $("next-btn");
-      const submitBtn = $("check-btn");
-      if (nextBtn) nextBtn.classList.remove("next-highlight");
-      if (submitBtn) submitBtn.classList.remove("next-inactive");
+      const nextBtn2 = $("next-btn");
+      const submitBtn2 = $("check-btn");
+      if (nextBtn2) nextBtn2.classList.remove("next-highlight");
+      if (submitBtn2) submitBtn2.classList.remove("next-inactive");
 
+      currentIndex = 0;
       renderQuestion();
     });
   }
@@ -1187,7 +1087,7 @@ window.addEventListener("DOMContentLoaded", () => {
       "For classroom use only. Do not redistribute.";
     const copyrightText =
       (exerciseConfig && exerciseConfig.copyright) ||
-      `© ${year} Jinhan Pae. All rights reserved.`;
+      `© ${year} Instructor. All rights reserved.`;
     footer.innerHTML =
       `<span>${copyrightText}</span>
        <span>${footerText}</span>`;
