@@ -9,12 +9,12 @@ const exerciseConfig = {
   // Entity / report labels
   entityName: "Emily's Dental Practice",
   chartWindowTitle: "Chart of Accounts – Emily's Dental Practice",
-  tbWindowTitle: "Trial Balance – Emily's Dental Practice",
+  tbWindowTitle: "Trial Balance",
   tbEntityName: "Emily's Dental Practice – Trial Balance",
 
   // Mode: "exercise" (feedback & grading) or "test" (no feedback / grading)
-  // mode: "exercise",
-  mode: "test",
+  mode: "exercise",
+  // mode: "test",
 
   // Login / initial screen
   useLoginScreen: true,
