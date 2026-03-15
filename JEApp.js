@@ -100,7 +100,12 @@ function renderQuestion() {
       drInput.min = "0";
       drInput.oninput = function () {
         if (!this.value) return;
-        if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+        const v = parseFloat(this.value);
+        if (isNaN(v) || v <= 0) {
+          this.value = "";
+        } else {
+          this.value = v.toString();
+        }
       };
       drInput.className = "dr-input";
       drInput.value = line.debit ? String(line.debit) : "";
@@ -111,7 +116,12 @@ function renderQuestion() {
       crInput.min = "0";
       crInput.oninput = function () {
         if (!this.value) return;
-        if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+        const v = parseFloat(this.value);
+        if (isNaN(v) || v <= 0) {
+          this.value = "";
+        } else {
+          this.value = v.toString();
+        }
       };
       crInput.className = "cr-input";
       crInput.value = line.credit ? String(line.credit) : "";
@@ -185,7 +195,12 @@ function addRow(initialCode = "") {
   drInput.min = "0";
   drInput.oninput = function () {
     if (!this.value) return;
-    if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+    const v = parseFloat(this.value);
+    if (isNaN(v) || v <= 0) {
+      this.value = "";
+    } else {
+      this.value = v.toString();
+    }
   };
   drInput.className = "dr-input";
 
@@ -195,7 +210,12 @@ function addRow(initialCode = "") {
   crInput.min = "0";
   crInput.oninput = function () {
     if (!this.value) return;
-    if (parseFloat(this.value) < 0) this.value = Math.abs(parseFloat(this.value)).toString();
+    const v = parseFloat(this.value);
+    if (isNaN(v) || v <= 0) {
+      this.value = "";
+    } else {
+      this.value = v.toString();
+    }
   };
   crInput.className = "cr-input";
 
