@@ -4,114 +4,54 @@
   <meta charset="UTF-8" />
   <title>Journal Entry Practice</title>
 
-  <!-- All layout/visual styles live in JEStyles.css -->
+  <!-- All layout and visual styles live in JEStyles.css -->
   <link rel="stylesheet" href="JEStyles.css" />
 </head>
 <body>
-  <!-- Login overlay (name + password) -->
-  <div id="login-overlay" style="
-    position: fixed;
-    inset: 0;
-    background: #0f172a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  ">
-    <div style="
-      background: #ffffff;
-      padding: 28px 32px 24px;
-      border-radius: 18px;
-      box-shadow:
-        0 24px 60px rgba(15, 23, 42, 0.35),
-        0 0 0 1px rgba(148, 163, 184, 0.35);
-      border: 1px solid #e5e7eb;
-      max-width: 400px;
-      width: 90%;
-      box-sizing: border-box;
-    ">
-      <h1 id="login-title" style="margin: 0 0 8px; font-size: 22px; text-align: center; color: #0f172a;">
-      </h1>
-      <p id="login-subtitle" style="text-align: center; font-size: 13px; color: #6b7280; margin: 0 0 18px;">
-      </p>
+  <!-- Login overlay: collect student name and password before starting -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <h1 id="login-title" class="login-title"></h1>
+      <p id="login-subtitle" class="login-subtitle"></p>
 
-      <div style="margin-bottom: 14px;">
-        <label for="student-name" style="
-          display: block;
-          font-size: 13px;
-          font-weight: 600;
-          color: #111827;
-          margin-bottom: 4px;
-        ">Name:</label>
+      <div class="login-field">
+        <label for="student-name" class="login-label">Name:</label>
         <input
           type="text"
           id="student-name"
+          class="login-input"
           placeholder="Your name (optional)"
-          style="
-            width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            box-sizing: border-box;
-          "
         />
       </div>
 
-      <div style="margin-bottom: 18px;">
-        <label for="password-input" style="
-          display: block;
-          font-size: 13px;
-          font-weight: 600;
-          color: #111827;
-          margin-bottom: 4px;
-        ">Password:</label>
+      <div class="login-field">
+        <label for="password-input" class="login-label">Password:</label>
         <input
           type="password"
           id="password-input"
+          class="login-input"
           placeholder="Enter password"
-          style="
-            width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            box-sizing: border-box;
-          "
         />
-        <div id="login-error" style="
-          margin-top: 6px;
-          font-size: 12px;
-          color: #b91c1c;
-          min-height: 16px;
-        "></div>
+        <div id="login-error" class="login-error"></div>
       </div>
 
-      <button id="login-btn" style="
-        width: 100%;
-        padding: 9px 14px;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        font-size: 13px;
-        cursor: pointer;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        color: #f9fafb;
-        font-weight: 600;
-      ">
+      <button id="login-btn" class="login-button">
         <span id="login-button-label"></span>
       </button>
     </div>
   </div>
 
-  <!-- Main app container (hidden until login succeeds or login disabled) -->
-  <div id="main-app" style="display: none;">
+  <!-- Main journal-entry practice interface (shown after login or if login disabled) -->
+  <div id="main-app" class="main-app hidden">
     <div class="container">
       <h1 id="app-title"></h1>
       <div id="app-subtitle" class="subtitle"></div>
 
+      <!-- Current transaction / event description -->
       <div id="tx-title" class="tx-title"></div>
       <div id="tx-description" class="tx-description"></div>
 
+      <!-- Journal entry input table -->
       <table class="journal-table">
         <thead>
           <tr>
@@ -126,17 +66,19 @@
 
       <button id="add-row-btn" class="secondary">Add row</button>
 
-      <label id="no-entry-wrapper"
-             style="display:block; margin-top:8px; font-size:13px; color:#374151;">
+      <!-- For items that do not require a journal entry -->
+      <label id="no-entry-wrapper" class="no-entry-wrapper">
         <input type="checkbox" id="no-entry-checkbox" />
         No journal entry is required for this item.
       </label>
 
+      <!-- Navigation and supporting tools (chart, TB, ledger) -->
       <div class="controls">
         <button id="prev-btn" class="secondary">Previous</button>
         <button id="check-btn" class="primary">Submit journal entry</button>
         <button id="next-btn" class="secondary">Next</button>
         <button id="clear-btn" class="secondary">Clear entry</button>
+
         <button id="open-chart-btn" class="secondary">Open chart of accounts</button>
         <button id="tb-btn" class="secondary">Prepare trial balance</button>
         <button id="ledger-btn" class="secondary">View general ledger</button>

@@ -3,11 +3,17 @@
    HTML + JS assume these class names and IDs exist.
 */
 
+/* Base layout */
+
 body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   background: #0f172a;
   margin: 0;
   padding: 32px 16px;
+}
+
+.hidden {
+  display: none;
 }
 
 .container {
@@ -21,6 +27,8 @@ body {
     0 0 0 1px rgba(148, 163, 184, 0.35);
   border: 1px solid #e5e7eb;
 }
+
+/* Headings and text */
 
 h1 {
   margin: 0 0 4px;
@@ -49,6 +57,87 @@ h1 {
   white-space: pre-line;
 }
 
+/* Login overlay */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.login-card {
+  background: #ffffff;
+  padding: 28px 32px 24px;
+  border-radius: 18px;
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(148, 163, 184, 0.35);
+  border: 1px solid #e5e7eb;
+  max-width: 400px;
+  width: 90%;
+  box-sizing: border-box;
+}
+
+.login-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  text-align: center;
+  color: #0f172a;
+}
+
+.login-subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 18px;
+}
+
+.login-field {
+  margin-bottom: 18px;
+}
+
+.login-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.login-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b91c1c;
+  min-height: 16px;
+}
+
+.login-button {
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #f9fafb;
+  font-weight: 600;
+}
+
+/* Journal table */
+
 .journal-table {
   width: 100%;
   border-collapse: collapse;
@@ -75,6 +164,8 @@ h1 {
   outline: none;
 }
 
+/* Controls & buttons */
+
 .controls {
   margin-top: 8px;
   display: flex;
@@ -92,6 +183,7 @@ button {
 }
 
 /* Base button styles */
+
 .primary {
   background: #ffffff;
   color: #374151;
@@ -105,6 +197,7 @@ button {
 }
 
 /* Default primary look: Submit button is blue */
+
 #check-btn.primary {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #f9fafb;
@@ -112,6 +205,7 @@ button {
 }
 
 /* Default Next: outlined blue */
+
 #next-btn.primary {
   background: #ffffff;
   color: #2563eb;
@@ -119,6 +213,7 @@ button {
 }
 
 /* When Next is highlighted after grading, it becomes solid blue */
+
 #next-btn.next-highlight {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #f9fafb;
@@ -126,11 +221,14 @@ button {
 }
 
 /* When Next is highlighted, submit becomes neutral */
+
 #check-btn.next-inactive {
   background: #ffffff;
   color: #374151;
   border-color: #d1d5db;
 }
+
+/* Feedback and footer */
 
 .feedback {
   margin-top: 14px;
@@ -170,34 +268,26 @@ button {
   gap: 2px;
 }
 
-/* --- Click flash behavior ---
-   While any button is pressed:
-   - All buttons are forced to neutral
-   - The pressed one is blue via more specific rules
-*/
+/* Click flash behavior: pressed buttons go neutral or blue */
 
-/* Neutral baseline while active */
 button:active {
   background: #ffffff;
   color: #374151;
   border-color: #d1d5db;
 }
 
-/* When Submit itself is pressed, keep it blue while active */
 #check-btn.primary:active {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #f9fafb;
   border-color: transparent;
 }
 
-/* When Next is pressed, show it blue while active */
 #next-btn:active {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #f9fafb;
   border-color: transparent;
 }
 
-/* Other buttons also flash blue while pressed */
 button.secondary:active,
 button:not(#check-btn):not(#next-btn):active {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
@@ -206,6 +296,22 @@ button:not(#check-btn):not(#next-btn):active {
 }
 
 /* Remove focus outline for a clean look */
+
 button:focus {
   outline: none;
+}
+
+/* No-entry checkbox label */
+
+.no-entry-wrapper {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #374151;
+}
+
+/* Main app visibility helper (JS toggles .hidden on #main-app) */
+
+.main-app {
+  /* visible state is the default; JS manages visibility */
 }
