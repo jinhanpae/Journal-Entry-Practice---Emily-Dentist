@@ -36,6 +36,24 @@ To prevent common errors:
 
 ---
 
+## Modes: Exercise vs Test
+
+The app can run in two modes, controlled by the `exerciseConfig.mode` setting.
+
+- **Exercise mode** (`mode: "exercise"` – default)  
+  - Students see immediate **feedback** on each attempt (Correct / Not correct, explanations).  
+  - The app tracks **partial credit**: if a student answers incorrectly first and later fixes it, they receive partial points.  
+  - A **score summary** is shown at the bottom of the page as they work.  
+  - When an answer is correct (including correctly choosing “No journal entry is required”), the **Next** button becomes highlighted in blue to guide students forward.
+
+- **Test mode** (`mode: "test"`)  
+  - Students can still enter and change journal entries for each transaction.  
+  - The app only checks **mechanical validity**: debits and credits must be equal and non‑zero; otherwise a warning is shown and Next is not highlighted.  
+  - There is **no feedback** about whether the accounts and amounts are conceptually correct, and no running score is displayed.  
+  - This mode is intended for quizzes or graded work where instructors review the saved entries later (e.g., via the trial balance or general ledger).
+
+---
+
 ## How instructors can reuse it
 
 The app is designed so you can create new versions by changing only:
@@ -57,7 +75,7 @@ The core app logic, scoring, and layout stay the same, which makes it easier to 
 - Pop‑up windows (trial balance, general ledger, chart of accounts) may need to be allowed in the browser if they are blocked.
 - Button behavior:
   - **Submit journal entry** is the main action and is highlighted in blue by default.
-  - After a correct entry, the **Next** button becomes highlighted to guide students forward.
+  - After a correct entry (in Exercise mode) or a mechanically valid entry in Test mode, the **Next** button becomes highlighted to guide students forward.
 
 ---
 

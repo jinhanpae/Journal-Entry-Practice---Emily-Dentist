@@ -3,8 +3,8 @@
 
 const exerciseConfig = {
   // App labels
-  appTitle: "Journal Entry Practice – Emily's Dental Practice (P2.2)",
-  subtitle: "Journal entries for April transactions. Enter 3-digit account codes.",
+  appTitle: "Journal Entry Practice – Emily's Dental Practice",
+  subtitle: "April transactions and events  (P2.2).",
 
   // Entity / report labels
   entityName: "Emily's Dental Practice",
@@ -18,7 +18,8 @@ const exerciseConfig = {
 
   // Login / initial screen
   useLoginScreen: true,
-  loginTitle: "Journal Entry Practice – Emily's Dental Practice",
+  loginTitle: "Journal Entry Practice",
+  loginSubtitle: "Emily’s Dental Practice.",
   loginPrompt: "Enter your name (optional) and password to begin.",
   // Empty string = no password required
   loginPassword: "KUBS",

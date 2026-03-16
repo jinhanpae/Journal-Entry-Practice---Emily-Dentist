@@ -407,20 +407,26 @@ function openFullLedgerWindow() {
         const baseLabel = titleById.get(line.questionId) || line.questionId || "";
         const qDate = dateById.get(line.questionId);
         const label = qDate ? `${qDate} – ${baseLabel}` : baseLabel;
+
         let balanceDisplay = "";
+        let balanceClass = "";
         if (runningBalance > 0) {
           balanceDisplay = runningBalance.toLocaleString();
         } else if (runningBalance < 0) {
           balanceDisplay = "(" + Math.abs(runningBalance).toLocaleString() + ")";
+        } else {
+          balanceDisplay = "0";
+          balanceClass = "zero-balance";
         }
+
         return `
-        <tr>
-          <td>${label}</td>
-          <td style="text-align:right;">${line.debit ? line.debit.toLocaleString() : ""}</td>
-          <td style="text-align:right;">${line.credit ? line.credit.toLocaleString() : ""}</td>
-          <td style="text-align:right;">${balanceDisplay}</td>
-        </tr>
-      `;
+          <tr>
+            <td>${label}</td>
+            <td style="text-align:right;">${line.debit ? line.debit.toLocaleString() : ""}</td>
+            <td style="text-align:right;">${line.credit ? line.credit.toLocaleString() : ""}</td>
+            <td style="text-align:right;" class="${balanceClass}">${balanceDisplay}</td>
+          </tr>
+        `;
       })
       .join("");
 
@@ -479,6 +485,10 @@ function openFullLedgerWindow() {
       font-size: 12px;
     }
     th { background: #f3f4f6; text-align: left; }
+
+    .zero-balance {
+      color: #9ca3af;
+    }
   </style>
 </head>
 <body>
@@ -1119,13 +1129,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const appSubtitleEl = document.getElementById("app-subtitle");
   const loginTitleEl = document.getElementById("login-title");
   const loginSubtitleEl = document.getElementById("login-subtitle");
+  const loginPromptEl = document.getElementById("login-prompt");
   const loginButtonLabelEl = document.getElementById("login-button-label");
 
   if (typeof exerciseConfig !== "undefined") {
     if (appTitleEl) appTitleEl.textContent = exerciseConfig.appTitle || "Journal Entry Practice";
     if (appSubtitleEl) appSubtitleEl.textContent = exerciseConfig.subtitle || "";
     if (loginTitleEl) loginTitleEl.textContent = exerciseConfig.loginTitle || "Journal Entry Practice";
-    if (loginSubtitleEl) loginSubtitleEl.textContent = exerciseConfig.loginPrompt || "";
+    if (loginSubtitleEl) loginSubtitleEl.textContent = exerciseConfig.loginSubtitle || "";
+    if (loginPromptEl) loginPromptEl.textContent = exerciseConfig.loginPrompt || "";
     if (loginButtonLabelEl) loginButtonLabelEl.textContent = exerciseConfig.loginButtonLabel || "Start practice";
   }
 
