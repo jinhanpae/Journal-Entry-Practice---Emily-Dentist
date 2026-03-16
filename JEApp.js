@@ -523,6 +523,12 @@ function openTrialBalanceWindow(mode = "adjusted") {
       if (!isPermanent) return;
     }
 
+    const net = totals.net || 0;
+    if (Math.abs(net) < 0.01) {
+      // Final balance is effectively zero → omit from TB
+      return;
+    }
+
     rows.push({
       accountId,
       name,
